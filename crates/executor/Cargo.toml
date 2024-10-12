@@ -1,0 +1,20 @@
+[package]
+name = "mate-executor"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "mate_executor"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mate-executor"
+path = "src/bin/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+
+mate = { workspace = true }

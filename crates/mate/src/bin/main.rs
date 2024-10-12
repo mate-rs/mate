@@ -3,8 +3,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 
-use mate::scheduler::redis::RedisBackend;
-use mate::scheduler::{Scheduler, SchedulerBackend};
+use mate::scheduler::Scheduler;
 use mate::Mate;
 
 #[tokio::main]

@@ -12,9 +12,7 @@ pub struct Client<SB: SchedulerBackend> {
 }
 
 impl<SB: SchedulerBackend> Client<SB> {
-    pub fn new(executor: Executor<SB>, scheduler: Arc<Scheduler<SB>>) -> Self {
-        let executor = Arc::new(executor);
-
+    pub fn new(executor: Arc<Executor<SB>>, scheduler: Arc<Scheduler<SB>>) -> Self {
         Self {
             executor,
             scheduler,

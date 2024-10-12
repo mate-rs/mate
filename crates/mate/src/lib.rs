@@ -22,7 +22,7 @@ pub struct Mate<SB: SchedulerBackend> {
 impl<SB: SchedulerBackend> Mate<SB> {
     pub fn new(scheduler: Scheduler<SB>, threshold: Duration) -> Self {
         let scheduler = Arc::new(scheduler);
-        let executor = Executor::new(Arc::clone(&scheduler), threshold);
+        let executor = Arc::new(Executor::new(Arc::clone(&scheduler), threshold));
         let client = Arc::new(Client::new(executor, scheduler));
         let repl = Repl::new(Arc::clone(&client));
 
@@ -34,13 +34,13 @@ impl<SB: SchedulerBackend> Mate<SB> {
     }
 
     pub async fn run(&self) -> Result<()> {
-        let executor = Arc::clone(&self.client.executor);
-        tokio::spawn(async move {
-            if let Err(err) = executor.run().await {
-                eprintln!("Executor error: {:?}", err);
-            }
-        })
-        .await?;
+        // let executor = Arc::clone(&self.client.executor);
+        // tokio::spawn(async move {
+        //     if let Err(err) = executor.run().await {
+        //         eprintln!("Executor error: {:?}", err);
+        //     }
+        // })
+        // .await?;
 
         Ok(())
     }

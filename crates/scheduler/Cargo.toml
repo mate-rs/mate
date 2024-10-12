@@ -1,0 +1,21 @@
+[package]
+name = "mate-scheduler"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "mate_scheduler"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mate-scheduler"
+path = "src/bin/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+redis = { workspace = true, features = ["tokio-comp"] }
+tokio = { workspace = true, features = ["full"] }
+
+mate = { workspace = true }
