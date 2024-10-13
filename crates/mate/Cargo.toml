@@ -21,8 +21,10 @@ path = "src/bin/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+bson = { workspace = true }
 clap = { workspace = true, features = ["derive", "env", "std"] }
 redis = { workspace = true, features = ["tokio-comp"] }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+serde = { workspace = true, features = ["derive"] }

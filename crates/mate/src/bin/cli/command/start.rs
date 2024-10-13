@@ -1,12 +1,10 @@
 use std::path::PathBuf;
 use std::process::Stdio;
-use std::time::Duration;
 
 use anyhow::Result;
 use clap::Args;
 
-use mate::scheduler::backend::redis::RedisBackend;
-use mate::scheduler::{Scheduler, SchedulerBackend};
+use mate::scheduler::SchedulerBackend;
 use mate::Mate;
 
 const MATE_SCHEDULER_BIN: &str = "./target/debug/mate-scheduler";
@@ -23,13 +21,10 @@ pub struct StartOpt {
 
 impl StartOpt {
     pub async fn exec(&self) -> Result<()> {
-        let backend = RedisBackend::new(self.redis_url.clone()).await?;
-        let scheduler = Scheduler::new(backend);
-        let mate = Mate::new(scheduler, Duration::from_secs(self.threshold));
+        let mate = Mate::new()?;
 
         tokio::select! {
             _ = self.spawn(MATE_SCHEDULER_BIN.into()) => {},
-            // _ = mate.run() => {},
             _ = mate.repl() => {},
         }
 
@@ -39,7 +34,7 @@ impl StartOpt {
     async fn spawn(&self, bin: PathBuf) -> Result<()> {
         tokio::spawn(async move {
             tokio::process::Command::new(bin)
-                .stdout(Stdio::null())
+                // .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
                 .expect("Failed to spawn process for mate-scheduler");
