@@ -1,22 +1,22 @@
-use std::env::var;
-use std::time::Duration;
+mod cli;
 
 use anyhow::Result;
+use clap::Parser;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
-use mate::scheduler::Scheduler;
-use mate::Mate;
+use self::cli::MateCli;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let redis_url = var("REDIS_URL").map_err(|_| anyhow::anyhow!("REDIS_URL is not set"))?;
-    let backend = RedisBackend::new(redis_url).await?;
-    let scheduler = Scheduler::new(backend);
-    let mate = Mate::new(scheduler, Duration::from_secs(1));
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::TRACE)
+        .finish();
 
-    tokio::select! {
-        _ = mate.run() => {},
-        _ = mate.repl() => {},
-    }
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
+    let args = MateCli::parse();
+
+    args.exec().await?;
     Ok(())
 }

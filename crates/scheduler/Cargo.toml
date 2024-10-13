@@ -15,7 +15,6 @@ path = "src/bin/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-redis = { workspace = true, features = ["tokio-comp"] }
 tokio = { workspace = true, features = ["full"] }
 
 mate = { workspace = true }

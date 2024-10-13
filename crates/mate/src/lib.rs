@@ -34,13 +34,13 @@ impl<SB: SchedulerBackend> Mate<SB> {
     }
 
     pub async fn run(&self) -> Result<()> {
-        // let executor = Arc::clone(&self.client.executor);
-        // tokio::spawn(async move {
-        //     if let Err(err) = executor.run().await {
-        //         eprintln!("Executor error: {:?}", err);
-        //     }
-        // })
-        // .await?;
+        let executor = Arc::clone(&self.client.executor);
+        tokio::spawn(async move {
+            if let Err(err) = executor.run().await {
+                eprintln!("Executor error: {:?}", err);
+            }
+        })
+        .await?;
 
         Ok(())
     }
