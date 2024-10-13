@@ -327,6 +327,8 @@ dependencies = [
  "async-trait",
  "mate",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

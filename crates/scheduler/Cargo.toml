@@ -16,5 +16,7 @@ path = "src/bin/main.rs"
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 mate = { workspace = true }

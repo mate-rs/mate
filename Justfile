@@ -6,3 +6,6 @@ dev:
 
 undev:
     docker-compose down
+
+build:
+    cargo b --all
