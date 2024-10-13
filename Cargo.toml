@@ -1,25 +1,21 @@
-[package]
-name = "mate"
-version = "0.1.0-draft+1"
-edition = "2021"
-authors = ["Esteban Borai <estebanborai@gmail.com>"]
-description = "Job Queue"
-repository = "https://github.com/mate-rs/mate"
-categories = ["web-programming"]
-keywords = ["queue", "job", "worker"]
-license = "MIT OR Apache-2.0"
-readme = "README.md"
+[workspace]
+members = [
+    "crates/executor",
+    "crates/mate",
+    "crates/scheduler",
+]
+default-members = ["crates/mate"]
+resolver = "1"
 
-[lib]
-name = "mate"
-path = "src/lib.rs"
-
-[[bin]]
-name = "mate"
-path = "src/bin/main.rs"
-
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-redis = { version = "0.27", features = ["tokio-comp"] }
-tokio = { version = "1", features = ["full"] }
+bson = "2.13.0"
+clap = "4.5.20"
+redis = "0.27"
+serde = "1.0.210"
+tokio = "1"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+mate = { path = "./crates/mate" }

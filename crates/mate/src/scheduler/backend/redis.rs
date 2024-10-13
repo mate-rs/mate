@@ -3,8 +3,7 @@ use async_trait::async_trait;
 use redis::Cmd;
 
 use crate::job::Job;
-
-use super::{SchedulerBackend, SCHEDULER_JOB_PREFIX};
+use crate::scheduler::{SchedulerBackend, SCHEDULER_JOB_PREFIX};
 
 pub const JOB_COUNTER_KEY: &str = "mate:job:counter";
 

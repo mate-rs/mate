@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use tokio::time::sleep;
+use tracing::error;
 
 use crate::scheduler::{Scheduler, SchedulerBackend};
 
@@ -34,7 +35,7 @@ impl<SB: SchedulerBackend> Executor<SB> {
                     }
                 }
                 Err(err) => {
-                    eprintln!("Failed to pop job from queue: {err}");
+                    error!("Failed to pop job from queue: {:?}", err);
                 }
             }
         }
