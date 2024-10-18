@@ -21,8 +21,8 @@ pub struct Mate {
 }
 
 impl Mate {
-    pub fn new() -> Result<Self> {
-        let client = Arc::new(Client::new()?);
+    pub async fn new() -> Result<Self> {
+        let client = Arc::new(Client::new().await?);
         let repl = Repl::new(Arc::clone(&client));
 
         Ok(Self { client, repl })

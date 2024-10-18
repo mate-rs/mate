@@ -21,7 +21,7 @@ pub struct StartOpt {
 
 impl StartOpt {
     pub async fn exec(&self) -> Result<()> {
-        let mate = Mate::new()?;
+        let mate = Mate::new().await?;
 
         tokio::select! {
             _ = self.spawn(MATE_SCHEDULER_BIN.into()) => {},
@@ -34,7 +34,7 @@ impl StartOpt {
     async fn spawn(&self, bin: PathBuf) -> Result<()> {
         tokio::spawn(async move {
             tokio::process::Command::new(bin)
-                // .stdout(Stdio::null())
+                .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
                 .expect("Failed to spawn process for mate-scheduler");
