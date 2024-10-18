@@ -4,64 +4,43 @@ use std::sync::Arc;
 use anyhow::Result;
 use tracing::info;
 
-use crate::client::{Client, Command};
+use crate::client::{Command as MateCommand, SocketClient};
 
 pub struct Repl {
-    pub(crate) client: Arc<Client>,
+    sc: Arc<SocketClient>,
 }
 
 impl Repl {
-    pub fn new(client: Arc<Client>) -> Self {
-        Self { client }
+    pub fn new(sc: SocketClient) -> Self {
+        Self { sc: Arc::new(sc) }
     }
 
     pub async fn start(&self) -> Result<()> {
-        let client = Arc::clone(&self.client);
+        println!("mate‎ v0.0.0. Run 'help' to see available commands, 'exit' to quit");
 
-        tokio::spawn(async move {
-            println!("mate‎ v0.0.0. Run 'help' to see available commands, 'exit' to quit");
+        loop {
+            eprint!("𐲖 ");
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            let args = input.split_whitespace().collect::<Vec<&str>>();
 
-            loop {
-                eprint!("𐲖 ");
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input).unwrap();
-                let args = input.split_whitespace().collect::<Vec<&str>>();
-
-                match args[0].trim() {
-                    // "eq" => {
-                    //     let job = Job {
-                    //         data: args[1].to_string(),
-                    //     };
-
-                    //     match client.enqueue(job).await {
-                    //         Ok(_) => {
-                    //             println!("Job enqueued with success!");
-                    //         }
-                    //         Err(err) => {
-                    //             eprintln!("Failed to enqueue job: {:?}", err);
-                    //         }
-                    //     }
-                    // }
-                    "list" => match client.send(Command::List).await {
-                        Ok(_) => {
-                            info!("List went OK.");
-                        }
-                        Err(err) => {
-                            eprintln!("Failed to list jobs: {:?}", err);
-                        }
-                    },
-                    "exit" => {
-                        process::exit(0);
+            match args[0].trim() {
+                "list" => match self.sc.send(MateCommand::List).await {
+                    Ok(_) => {
+                        info!("List went OK.");
                     }
-                    _ => println!(
-                        "Unknown command: \"{}\", use \"help\" to learn more about commands",
-                        input.trim()
-                    ),
+                    Err(err) => {
+                        eprintln!("Failed to list jobs: {}", err);
+                    }
+                },
+                "exit" => {
+                    process::exit(0);
                 }
+                _ => println!(
+                    "Unknown command: \"{}\", use \"help\" to learn more about commands",
+                    input.trim()
+                ),
             }
-        })
-        .await?;
-
-        Ok(())
+        }
     }
 }

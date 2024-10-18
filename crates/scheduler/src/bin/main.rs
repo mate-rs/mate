@@ -1,13 +1,12 @@
-use std::io::Read;
-use std::{net::TcpListener, time::Duration};
+use std::time::Duration;
 
 use anyhow::Result;
 use tokio::time::sleep;
-use tracing::{error, Level};
+use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 use mate::scheduler::{backend::redis::RedisBackend, Scheduler, SchedulerBackend};
-use mate::SCHEDULER_PORT;
+use mate_scheduler::server::Server;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,6 +16,7 @@ async fn main() -> Result<()> {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
+    println!("Spawning processes");
     tokio::select! {
         _ = listen() => {},
         _ = dispatch() => {},
@@ -26,17 +26,8 @@ async fn main() -> Result<()> {
 }
 
 async fn listen() -> Result<()> {
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", SCHEDULER_PORT))?;
-
-    loop {
-        let (mut stream, _) = listener.accept()?;
-
-        tokio::spawn(async move {
-            let buf = &mut Vec::new();
-            stream.read_to_end(buf).unwrap();
-            println!("{:?}", buf);
-        });
-    }
+    let server = Server::new().await?;
+    server.run().await
 }
 
 async fn dispatch() -> Result<()> {
@@ -56,8 +47,8 @@ async fn dispatch() -> Result<()> {
                     job.dispatch();
                 }
             }
-            Err(err) => {
-                error!("Failed to pop job from queue: {:?}", err);
+            Err(_) => {
+                // error!("Failed to pop job from queue: {:?}", err);
             }
         }
     }

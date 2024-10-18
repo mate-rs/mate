@@ -1,11 +1,9 @@
 use std::path::PathBuf;
-use std::process::Stdio;
 
 use anyhow::Result;
 use clap::Args;
 
-use mate::scheduler::SchedulerBackend;
-use mate::Mate;
+use mate::{client::SocketClient, repl::Repl, SCHEDULER_PORT};
 
 const MATE_SCHEDULER_BIN: &str = "./target/debug/mate-scheduler";
 
@@ -21,26 +19,17 @@ pub struct StartOpt {
 
 impl StartOpt {
     pub async fn exec(&self) -> Result<()> {
-        let mate = Mate::new()?;
-
-        tokio::select! {
-            _ = self.spawn(MATE_SCHEDULER_BIN.into()) => {},
-            _ = mate.repl() => {},
-        }
-
-        Ok(())
-    }
-
-    async fn spawn(&self, bin: PathBuf) -> Result<()> {
-        tokio::spawn(async move {
-            tokio::process::Command::new(bin)
+        let _scheduler_task = tokio::spawn(async move {
+            tokio::process::Command::new(PathBuf::from(MATE_SCHEDULER_BIN))
                 // .stdout(Stdio::null())
-                .stderr(Stdio::null())
+                // .stderr(Stdio::null())
                 .spawn()
                 .expect("Failed to spawn process for mate-scheduler");
-        })
-        .await?;
+        });
+        let sc = SocketClient::new(format!("127.0.0.1:{}", SCHEDULER_PORT)).await?;
+        let repl = Repl::new(sc.clone());
 
+        repl.start().await?;
         Ok(())
     }
 }
