@@ -23,7 +23,9 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 bson = { workspace = true }
 clap = { workspace = true, features = ["derive", "env", "std"] }
+libc = { workspace = true }
 redis = { workspace = true, features = ["tokio-comp"] }
+tempfile = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
