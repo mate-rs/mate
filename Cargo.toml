@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/executor",
+    "crates/fifo",
     "crates/mate",
     "crates/scheduler",
 ]
@@ -10,6 +11,7 @@ resolver = "1"
 [workspace.dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
+bincode = "1.3.3"
 bson = "2.13.0"
 clap = "4.5.20"
 ipc-channel = "0.19.0"
@@ -21,4 +23,5 @@ tokio = "1"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 
+mate-fifo = { path = "./crates/fifo" }
 mate = { path = "./crates/mate" }

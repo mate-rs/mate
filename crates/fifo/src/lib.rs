@@ -1,9 +1,16 @@
+pub mod proto;
+
 use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
 use anyhow::Result;
 use libc::{c_char, mkfifo};
 use tempfile::{tempdir, TempDir};
+use tokio::io::AsyncWriteExt;
+use tokio::io::AsyncReadExt;
+use tokio::net::unix::pipe::{OpenOptions, Receiver, Sender};
+
+use crate::proto::Message;
 
 const RW_FS_PERMISSIONS: u16 = 0o644;
 
@@ -13,19 +20,19 @@ pub struct NPipe {
     path: PathBuf,
     /// Temporary Dir containing FIFO files, will be deleted
     /// when [`Fifo`] is dropped
-    dir: TempDir,
+    _dir: TempDir,
 }
 
 impl NPipe {
     pub fn new<S: Into<String>>(name: S) -> Result<Self> {
-        let dir = tempdir()?;
-        let path = dir.path().join(name.into());
+        let _dir = tempdir()?;
+        let path = _dir.path().join(name.into());
 
         unsafe {
             Self::make_fifo(path.clone())?;
         };
 
-        Ok(Self { path, dir })
+        Ok(Self { path, _dir })
     }
 
     #[inline]
@@ -33,6 +40,13 @@ impl NPipe {
         &self.path
     }
 
+    pub async fn open(&self) -> Result<NPipeHandle> {
+        let rx = OpenOptions::new().open_receiver(&self.path)?;
+        let tx = OpenOptions::new().open_sender(&self.path)?;
+        Ok(NPipeHandle { rx, tx })
+    }
+
+    // FIXME: This is not working on Windows
     unsafe fn make_fifo(path: PathBuf) -> Result<()> {
         let os_str = path.into_os_string();
         let slice = os_str.as_bytes();
@@ -51,6 +65,43 @@ impl NPipe {
             Ok(())
         }
     }
+}
+
+#[derive(Debug)]
+pub struct NPipeHandle {
+    rx: Receiver,
+    tx: Sender,
+}
+
+impl NPipeHandle {
+    pub async fn new(path: &PathBuf) -> Result<NPipeHandle> {
+        let rx = OpenOptions::new().open_receiver(path)?;
+        let tx = OpenOptions::new().open_sender(path)?;
+
+        Ok(Self {
+            rx,
+            tx,
+        })
+    }
+
+    pub async fn send(&mut self, msg: &Message) -> Result<()> {
+        let msg = bincode::serialize(msg).expect("Serialization failed");
+        self.tx.write_all(&usize::to_ne_bytes(msg.len())).await?;
+        self.tx.write_all(&msg[..]).await?;
+        self.tx.flush().await.map_err(|e| {
+            tracing::error!("Failed to flush write pipe: {:?}", e);
+            anyhow::anyhow!("The write pipe is broken")
+        })
+    }
+
+    pub async fn recv(&mut self) -> Result<Message> {
+            let mut len_bytes = [0u8; std::mem::size_of::<usize>()];
+            self.rx.read_exact(&mut len_bytes).await?;
+            let len = usize::from_ne_bytes(len_bytes);
+            let mut buf = vec![0; len];
+            self.rx.read_exact(&mut buf[..]).await?;
+            Ok(bincode::deserialize(&buf[..]).expect("Deserialization failed"))
+        }
 }
 
 #[cfg(test)]

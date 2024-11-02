@@ -1,6 +1,5 @@
 pub mod client;
 pub mod executor;
-pub mod ipc;
 pub mod job;
 pub mod repl;
 pub mod scheduler;
