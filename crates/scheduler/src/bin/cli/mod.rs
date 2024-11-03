@@ -27,18 +27,18 @@ pub struct MateSchedulerCli {
 impl MateSchedulerCli {
     pub async fn exec(self) -> Result<()> {
         tokio::select! {
-            _ = listen(&self.main_pipe, &self.scheduler_pipe, self.redis_url) => {},
-            _ = dispatch(&self.main_pipe) => {},
+            _ = listen(&self.main_pipe, &self.scheduler_pipe, &self.redis_url) => {},
+            _ = dispatch(&self.main_pipe, &self.redis_url) => {},
         }
 
         Ok(())
     }
 }
 
-async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf, redis_url: String) -> Result<()> {
+async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf, redis_url: &String) -> Result<()> {
     let main_pipe = NPipeHandle::new(&main_pipe).await?;
     let scheduler_pipe = NPipeHandle::new(&scheduler_pipe).await?;
-    let backend = RedisBackend::new(redis_url).await?;
+    let backend = RedisBackend::new(redis_url.to_owned()).await?;
     let scheduler = Scheduler::new(backend);
 
     loop {
@@ -68,9 +68,9 @@ async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf, redis_url: String
     }
 }
 
-async fn dispatch(main_pipe: &PathBuf) -> Result<()> {
+async fn dispatch(main_pipe: &PathBuf, redis_url: &String) -> Result<()> {
     let main_pipe = NPipeHandle::new(&main_pipe).await?;
-    let backend = RedisBackend::new(String::from("redis://127.0.0.1:6379/")).await?;
+    let backend = RedisBackend::new(redis_url.to_owned()).await?;
     let scheduler = Scheduler::new(backend);
 
     loop {
