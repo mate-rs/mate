@@ -2,17 +2,21 @@ use std::process;
 use std::sync::Arc;
 
 use anyhow::Result;
-use tracing::info;
 
-use crate::client::{Command as MateCommand, SocketClient};
+use mate_fifo::proto::{MainReply, Message, SchedulerRequest};
+use mate_fifo::NPipeHandle;
 
 pub struct Repl {
-    sc: Arc<SocketClient>,
+    main_pipe: Arc<NPipeHandle>,
+    scheduler_pipe: Arc<NPipeHandle>,
 }
 
 impl Repl {
-    pub fn new(sc: SocketClient) -> Self {
-        Self { sc: Arc::new(sc) }
+    pub fn new(main_pipe: NPipeHandle, scheduler_pipe: NPipeHandle) -> Self {
+        Self {
+            main_pipe: Arc::new(main_pipe),
+            scheduler_pipe: Arc::new(scheduler_pipe),
+        }
     }
 
     pub async fn start(&self) -> Result<()> {
@@ -25,16 +29,43 @@ impl Repl {
             let args = input.split_whitespace().collect::<Vec<&str>>();
 
             match args[0].trim() {
-                "list" => match self.sc.send(MateCommand::List).await {
+                "list" => match self
+                    .scheduler_pipe
+                    .send(&Message::SchedulerRequest(SchedulerRequest::ListJobs))
+                    .await
+                {
                     Ok(_) => {
-                        info!("List went OK.");
+                        let msg = self.main_pipe.recv().await?;
+
+                        if let Message::MainReply(MainReply::ListJobs(jobs)) = msg {
+                            println!(">> {jobs:?}");
+                        } else {
+                            eprintln!("Failed to list jobs: {:?}", msg);
+                        }
                     }
                     Err(err) => {
                         eprintln!("Failed to list jobs: {}", err);
                     }
                 },
                 "exit" => {
-                    process::exit(0);
+                    match self
+                        .scheduler_pipe
+                        .send(&Message::SchedulerRequest(SchedulerRequest::Exit))
+                        .await
+                    {
+                        Ok(_) => {
+                            let msg = self.main_pipe.recv().await?;
+
+                            if let Message::MainReply(MainReply::SchedulerExited) = msg {
+                                process::exit(0);
+                            } else {
+                                eprintln!("Failed to exit scheduler: {:?}", msg);
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("Failed to list jobs: {}", err);
+                        }
+                    }
                 }
                 _ => println!(
                     "Unknown command: \"{}\", use \"help\" to learn more about commands",

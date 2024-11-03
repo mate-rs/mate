@@ -1,11 +1,10 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use anyhow::Result;
-
 use tokio::{io::AsyncReadExt, net::TcpListener};
+use tracing::{error, info};
 
 use mate::SCHEDULER_PORT;
-use tracing::{error, info};
 
 pub struct Server {
     stream: TcpListener,

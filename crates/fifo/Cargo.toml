@@ -1,32 +1,20 @@
 [package]
-name = "mate"
+name = "mate-fifo"
 version = "0.1.0-draft+1"
 edition = "2021"
 authors = ["Esteban Borai <estebanborai@gmail.com>"]
-description = "Job Queue"
+description = "FIFO Implementation for Mate IPC"
 repository = "https://github.com/mate-rs/mate"
 categories = ["web-programming"]
 keywords = ["queue", "job", "worker"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 
-[lib]
-name = "mate"
-path = "src/lib.rs"
-
-[[bin]]
-name = "mate"
-path = "src/bin/main.rs"
-
 [dependencies]
 anyhow = { workspace = true }
-async-trait = { workspace = true }
-bson = { workspace = true }
-clap = { workspace = true, features = ["derive", "env", "std"] }
-redis = { workspace = true, features = ["tokio-comp"] }
+bincode = { workspace = true }
+libc = { workspace = true }
+tempfile = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-
-mate-fifo = { workspace = true }
