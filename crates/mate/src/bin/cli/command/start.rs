@@ -38,6 +38,8 @@ fn spawn_scheduler(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<Chil
         .arg(main_pipe.to_str().unwrap())
         .arg("--scheduler-pipe")
         .arg(scheduler_pipe.to_str().unwrap())
+        .arg("--redis-url")
+        .arg(String::from("redis://127.0.0.1:6379/"))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;

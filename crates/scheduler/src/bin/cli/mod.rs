@@ -16,16 +16,18 @@ use mate_fifo::{proto::{MainReply, Message, SchedulerRequest}, NPipeHandle};
     next_line_help = true
 )]
 pub struct MateSchedulerCli {
-    #[clap(long = "main-pipe")]
+    #[clap(long)]
     pub main_pipe: PathBuf,
-    #[clap(long = "scheduler-pipe")]
+    #[clap(long)]
     pub scheduler_pipe: PathBuf,
+    #[clap(long)]
+    pub redis_url: String,
 }
 
 impl MateSchedulerCli {
     pub async fn exec(self) -> Result<()> {
         tokio::select! {
-            _ = listen(&self.main_pipe, &self.scheduler_pipe) => {},
+            _ = listen(&self.main_pipe, &self.scheduler_pipe, self.redis_url) => {},
             _ = dispatch(&self.main_pipe) => {},
         }
 
@@ -33,10 +35,10 @@ impl MateSchedulerCli {
     }
 }
 
-async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<()> {
+async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf, redis_url: String) -> Result<()> {
     let main_pipe = NPipeHandle::new(&main_pipe).await?;
     let scheduler_pipe = NPipeHandle::new(&scheduler_pipe).await?;
-    let backend = RedisBackend::new(String::from("redis://127.0.0.1:6379/")).await?;
+    let backend = RedisBackend::new(redis_url).await?;
     let scheduler = Scheduler::new(backend);
 
     loop {
@@ -62,12 +64,6 @@ async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<()> {
                 }
             }
             _ => {}
-            // Message::Text(p) => {
-            //     println!("<< {}", p);
-            //     main_pipe.send(&Message::Ack).await?;
-            //     sleep(Duration::from_millis(500)).await;
-            // }
-            // Message::Ack => panic!("Didn't expect Ack now."),
         }
     }
 }
