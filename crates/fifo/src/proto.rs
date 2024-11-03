@@ -8,7 +8,6 @@ pub struct Job {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Message {
     Text(String),
-    Ack,
     MainReply(MainReply),
     SchedulerRequest(SchedulerRequest),
 }

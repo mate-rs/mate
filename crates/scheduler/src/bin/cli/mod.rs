@@ -7,7 +7,10 @@ use tokio::time::sleep;
 use tracing::{error, info};
 
 use mate::scheduler::{backend::redis::RedisBackend, Scheduler, SchedulerBackend};
-use mate_fifo::{proto::{MainReply, Message, SchedulerRequest}, NPipeHandle};
+use mate_fifo::{
+    proto::{MainReply, Message, SchedulerRequest},
+    NPipeHandle,
+};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -36,40 +39,39 @@ impl MateSchedulerCli {
 }
 
 async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf, redis_url: &String) -> Result<()> {
-    let main_pipe = NPipeHandle::new(&main_pipe).await?;
-    let scheduler_pipe = NPipeHandle::new(&scheduler_pipe).await?;
+    let main_pipe = NPipeHandle::new(main_pipe).await?;
+    let scheduler_pipe = NPipeHandle::new(scheduler_pipe).await?;
     let backend = RedisBackend::new(redis_url.to_owned()).await?;
     let scheduler = Scheduler::new(backend);
 
     loop {
-        match scheduler_pipe.recv().await? {
-            Message::SchedulerRequest(req) => {
-                match req {
-                    SchedulerRequest::ListJobs => {
-                        match scheduler.list().await {
-                            Ok(jobs) => {
-                                info!(?jobs, "Listed jobs");
-                                main_pipe.send(&Message::MainReply(MainReply::ListJobs(jobs))).await?
-                            }
-                            Err(err) => {
-                                error!(%err, "Failed to list jobs");
-                            }
-                        }
-                    },
-                    SchedulerRequest::Exit => {
-                        info!("Exiting...");
-                        main_pipe.send(&Message::MainReply(MainReply::SchedulerExited)).await?;
-                        process::exit(0);
+        if let Message::SchedulerRequest(req) = scheduler_pipe.recv().await? {
+            match req {
+                SchedulerRequest::ListJobs => match scheduler.list().await {
+                    Ok(jobs) => {
+                        info!(?jobs, "Listed jobs");
+                        main_pipe
+                            .send(&Message::MainReply(MainReply::ListJobs(jobs)))
+                            .await?
                     }
+                    Err(err) => {
+                        error!(%err, "Failed to list jobs");
+                    }
+                },
+                SchedulerRequest::Exit => {
+                    info!("Exiting...");
+                    main_pipe
+                        .send(&Message::MainReply(MainReply::SchedulerExited))
+                        .await?;
+                    process::exit(0);
                 }
             }
-            _ => {}
         }
     }
 }
 
 async fn dispatch(main_pipe: &PathBuf, redis_url: &String) -> Result<()> {
-    let main_pipe = NPipeHandle::new(&main_pipe).await?;
+    let main_pipe = NPipeHandle::new(main_pipe).await?;
     let backend = RedisBackend::new(redis_url.to_owned()).await?;
     let scheduler = Scheduler::new(backend);
 
@@ -82,12 +84,18 @@ async fn dispatch(main_pipe: &PathBuf, redis_url: &String) -> Result<()> {
                     continue;
                 }
 
-                if let Err(err) = main_pipe.send(&Message::Text(format!("Jobs found: {}", jobs.len()))).await {
+                if let Err(err) = main_pipe
+                    .send(&Message::Text(format!("Jobs found: {}", jobs.len())))
+                    .await
+                {
                     error!(%err, "Failed to send message to fifo");
                 }
             }
             Err(err) => {
-                if let Err(err) = main_pipe.send(&Message::Text(format!("Failed to fetch jobs: {}", err))).await {
+                if let Err(err) = main_pipe
+                    .send(&Message::Text(format!("Failed to fetch jobs: {}", err)))
+                    .await
+                {
                     error!(%err, "Failed to send message to fifo");
                 }
             }

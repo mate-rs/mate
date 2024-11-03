@@ -2,12 +2,9 @@ use std::process;
 use std::sync::Arc;
 
 use anyhow::Result;
+
 use mate_fifo::proto::{MainReply, Message, SchedulerRequest};
-use tracing::info;
-
 use mate_fifo::NPipeHandle;
-
-use crate::client::Command as MateCommand;
 
 pub struct Repl {
     main_pipe: Arc<NPipeHandle>,

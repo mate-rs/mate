@@ -25,7 +25,7 @@ impl StartOpt {
         let main_pipe_handler = main_pipe.open().await?;
         let scheduler_pipe = NPipe::new("scheduler")?;
         let schuduler_pipe_handler = scheduler_pipe.open().await?;
-        let _scheduler_task = spawn_scheduler(&main_pipe.path(), &scheduler_pipe.path())?;
+        let _scheduler_task = spawn_scheduler(main_pipe.path(), scheduler_pipe.path())?;
         let repl = Repl::new(main_pipe_handler, schuduler_pipe_handler);
         repl.start().await?;
         Ok(())
