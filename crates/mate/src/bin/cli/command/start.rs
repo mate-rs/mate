@@ -2,8 +2,9 @@ use std::{path::PathBuf, process::Stdio};
 
 use anyhow::Result;
 use clap::Args;
+use tokio::process::{Child, Command};
 
-use mate::{client::SocketClient, repl::Repl, SCHEDULER_PORT};
+use mate::repl::Repl;
 use mate_fifo::NPipe;
 
 const MATE_SCHEDULER_BIN: &str = "./target/debug/mate-scheduler";
@@ -24,19 +25,22 @@ impl StartOpt {
         let main_pipe_handler = main_pipe.open().await?;
         let scheduler_pipe = NPipe::new("scheduler")?;
         let schuduler_pipe_handler = scheduler_pipe.open().await?;
-        // let _scheduler_task = tokio::spawn(async move {
-        //     tokio::process::Command::new(PathBuf::from(MATE_SCHEDULER_BIN))
-        //         .arg("--fifo")
-        //         .arg(scheduler_pipe.path().to_str().unwrap())
-        //         // .stdout(Stdio::null())
-        //         // .stderr(Stdio::null())
-        //         .spawn()
-        //         .expect("Failed to spawn process for mate-scheduler");
-        // });
-
+        let _scheduler_task = spawn_scheduler(&main_pipe.path(), &scheduler_pipe.path())?;
         let repl = Repl::new(main_pipe_handler, schuduler_pipe_handler);
-
         repl.start().await?;
         Ok(())
     }
+}
+
+fn spawn_scheduler(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<Child> {
+    let child = Command::new(PathBuf::from(MATE_SCHEDULER_BIN))
+        .arg("--main-pipe")
+        .arg(main_pipe.to_str().unwrap())
+        .arg("--scheduler-pipe")
+        .arg(scheduler_pipe.to_str().unwrap())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    Ok(child)
 }

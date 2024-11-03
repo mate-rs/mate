@@ -51,7 +51,24 @@ impl Repl {
                     }
                 },
                 "exit" => {
-                    process::exit(0);
+                    match self
+                        .scheduler_pipe
+                        .send(&Message::SchedulerRequest(SchedulerRequest::Exit))
+                        .await
+                    {
+                        Ok(_) => {
+                            let msg = self.main_pipe.recv().await?;
+
+                            if let Message::MainReply(MainReply::SchedulerExited) = msg {
+                                process::exit(0);
+                            } else {
+                                eprintln!("Failed to exit scheduler: {:?}", msg);
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("Failed to list jobs: {}", err);
+                        }
+                    }
                 }
                 _ => println!(
                     "Unknown command: \"{}\", use \"help\" to learn more about commands",

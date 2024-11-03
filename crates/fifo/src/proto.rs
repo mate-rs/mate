@@ -16,9 +16,11 @@ pub enum Message {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MainReply {
     ListJobs(Vec<Job>),
+    SchedulerExited,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SchedulerRequest {
     ListJobs,
+    Exit,
 }

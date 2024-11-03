@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::{path::PathBuf, process, time::Duration};
 
 use anyhow::Result;
 use clap::Parser;
@@ -53,6 +53,11 @@ async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<()> {
                                 error!(%err, "Failed to list jobs");
                             }
                         }
+                    },
+                    SchedulerRequest::Exit => {
+                        info!("Exiting...");
+                        main_pipe.send(&Message::MainReply(MainReply::SchedulerExited)).await?;
+                        process::exit(0);
                     }
                 }
             }
