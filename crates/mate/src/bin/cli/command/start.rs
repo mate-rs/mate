@@ -1,9 +1,10 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Stdio};
 
 use anyhow::Result;
 use clap::Args;
 
 use mate::{client::SocketClient, repl::Repl, SCHEDULER_PORT};
+use mate_fifo::NPipe;
 
 const MATE_SCHEDULER_BIN: &str = "./target/debug/mate-scheduler";
 
@@ -19,15 +20,21 @@ pub struct StartOpt {
 
 impl StartOpt {
     pub async fn exec(&self) -> Result<()> {
-        let _scheduler_task = tokio::spawn(async move {
-            tokio::process::Command::new(PathBuf::from(MATE_SCHEDULER_BIN))
-                // .stdout(Stdio::null())
-                // .stderr(Stdio::null())
-                .spawn()
-                .expect("Failed to spawn process for mate-scheduler");
-        });
-        let sc = SocketClient::new(format!("127.0.0.1:{}", SCHEDULER_PORT)).await?;
-        let repl = Repl::new(sc.clone());
+        let main_pipe = NPipe::new("main")?;
+        let main_pipe_handler = main_pipe.open().await?;
+        let scheduler_pipe = NPipe::new("scheduler")?;
+        let schuduler_pipe_handler = scheduler_pipe.open().await?;
+        // let _scheduler_task = tokio::spawn(async move {
+        //     tokio::process::Command::new(PathBuf::from(MATE_SCHEDULER_BIN))
+        //         .arg("--fifo")
+        //         .arg(scheduler_pipe.path().to_str().unwrap())
+        //         // .stdout(Stdio::null())
+        //         // .stderr(Stdio::null())
+        //         .spawn()
+        //         .expect("Failed to spawn process for mate-scheduler");
+        // });
+
+        let repl = Repl::new(main_pipe_handler, schuduler_pipe_handler);
 
         repl.start().await?;
         Ok(())

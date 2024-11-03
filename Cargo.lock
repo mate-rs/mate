@@ -499,7 +499,9 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "clap",
  "mate",
+ "mate-fifo",
  "tokio",
  "tracing",
  "tracing-subscriber",

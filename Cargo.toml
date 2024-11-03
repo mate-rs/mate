@@ -5,7 +5,10 @@ members = [
     "crates/mate",
     "crates/scheduler",
 ]
-default-members = ["crates/mate"]
+default-members = [
+    "crates/mate",
+    "crates/scheduler",
+]
 resolver = "1"
 
 [workspace.dependencies]
