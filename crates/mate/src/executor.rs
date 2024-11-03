@@ -28,10 +28,6 @@ impl<SB: SchedulerBackend> Executor<SB> {
                     if jobs.is_empty() {
                         continue;
                     }
-
-                    for job in jobs {
-                        job.dispatch();
-                    }
                 }
                 Err(_) => {
                     // error!("Failed to pop job from queue: {:?}", err);

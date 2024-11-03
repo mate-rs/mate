@@ -2,7 +2,7 @@ use std::process;
 use std::sync::Arc;
 
 use anyhow::Result;
-use mate_fifo::proto::Message;
+use mate_fifo::proto::{MainReply, Message, SchedulerRequest};
 use tracing::info;
 
 use mate_fifo::NPipeHandle;
@@ -34,12 +34,17 @@ impl Repl {
             match args[0].trim() {
                 "list" => match self
                     .scheduler_pipe
-                    .send(&Message::Text("Hello".into()))
+                    .send(&Message::SchedulerRequest(SchedulerRequest::ListJobs))
                     .await
                 {
                     Ok(_) => {
-                        let message = self.main_pipe.recv().await?;
-                        println!(">> {message:?}");
+                        let msg = self.main_pipe.recv().await?;
+
+                        if let Message::MainReply(MainReply::ListJobs(jobs)) = msg {
+                            println!(">> {jobs:?}");
+                        } else {
+                            eprintln!("Failed to list jobs: {:?}", msg);
+                        }
                     }
                     Err(err) => {
                         eprintln!("Failed to list jobs: {}", err);

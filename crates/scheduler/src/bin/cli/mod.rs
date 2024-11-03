@@ -7,7 +7,7 @@ use tokio::time::sleep;
 use tracing::{error, info};
 
 use mate::scheduler::{backend::redis::RedisBackend, Scheduler, SchedulerBackend};
-use mate_fifo::{proto::Message, NPipeHandle};
+use mate_fifo::{proto::{MainReply, Message, SchedulerRequest}, NPipeHandle};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -36,15 +36,33 @@ impl MateSchedulerCli {
 async fn listen(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<()> {
     let main_pipe = NPipeHandle::new(&main_pipe).await?;
     let scheduler_pipe = NPipeHandle::new(&scheduler_pipe).await?;
+    let backend = RedisBackend::new(String::from("redis://127.0.0.1:6379/")).await?;
+    let scheduler = Scheduler::new(backend);
 
     loop {
         match scheduler_pipe.recv().await? {
-            Message::Text(p) => {
-                println!("<< {}", p);
-                main_pipe.send(&Message::Ack).await?;
-                sleep(Duration::from_millis(500)).await;
+            Message::SchedulerRequest(req) => {
+                match req {
+                    SchedulerRequest::ListJobs => {
+                        match scheduler.list().await {
+                            Ok(jobs) => {
+                                info!(?jobs, "Listed jobs");
+                                main_pipe.send(&Message::MainReply(MainReply::ListJobs(jobs))).await?
+                            }
+                            Err(err) => {
+                                error!(%err, "Failed to list jobs");
+                            }
+                        }
+                    }
+                }
             }
-            Message::Ack => panic!("Didn't expect Ack now."),
+            _ => {}
+            // Message::Text(p) => {
+            //     println!("<< {}", p);
+            //     main_pipe.send(&Message::Ack).await?;
+            //     sleep(Duration::from_millis(500)).await;
+            // }
+            // Message::Ack => panic!("Didn't expect Ack now."),
         }
     }
 }
@@ -65,10 +83,6 @@ async fn dispatch(main_pipe: &PathBuf) -> Result<()> {
 
                 if let Err(err) = main_pipe.send(&Message::Text(format!("Jobs found: {}", jobs.len()))).await {
                     error!(%err, "Failed to send message to fifo");
-                }
-
-                for job in jobs {
-                    job.dispatch();
                 }
             }
             Err(err) => {
