@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use mate_fifo::proto::{MainReply, Message, SchedulerRequest};
+use mate_fifo::message::{MainReply, Message, SchedulerRequest};
 use mate_fifo::NPipeHandle;
 
 pub struct Repl {

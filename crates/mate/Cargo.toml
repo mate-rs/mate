@@ -30,3 +30,4 @@ tracing-subscriber = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 
 mate-fifo = { workspace = true }
+mate-proto = { workspace = true }

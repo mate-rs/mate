@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use redis::Cmd;
 
-use mate_fifo::proto::Job;
+use mate_proto::Job;
 
 use crate::scheduler::{SchedulerBackend, SCHEDULER_JOB_PREFIX};
 

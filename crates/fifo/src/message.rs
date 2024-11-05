@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Job {
-    pub data: String,
-}
+use mate_proto::Job;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Message {

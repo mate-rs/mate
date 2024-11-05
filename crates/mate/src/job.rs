@@ -1,10 +1,17 @@
-#[derive(Debug)]
-pub struct Job {
-    pub data: String,
+use anyhow::Result;
+use async_trait::async_trait;
+
+use mate_proto::Job;
+
+#[async_trait]
+pub trait JobExt {
+    async fn dispatch(&self) -> Result<()>;
 }
 
-impl Job {
-    pub fn dispatch(&self) {
-        println!("{}", self.data);
+#[async_trait]
+impl JobExt for Job {
+    async fn dispatch(&self) -> Result<()> {
+        println!("Dispatching job: {:?}", self);
+        Ok(())
     }
 }

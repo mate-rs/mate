@@ -7,10 +7,8 @@ use tokio::time::sleep;
 use tracing::{error, info};
 
 use mate::scheduler::{backend::redis::RedisBackend, Scheduler, SchedulerBackend};
-use mate_fifo::{
-    proto::{MainReply, Message, SchedulerRequest},
-    NPipeHandle,
-};
+use mate_fifo::message::{MainReply, Message, SchedulerRequest};
+use mate_fifo::NPipeHandle;
 
 #[derive(Debug, Parser)]
 #[command(

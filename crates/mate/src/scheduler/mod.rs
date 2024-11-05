@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 
-use mate_fifo::proto::Job;
+use mate_proto::Job;
 
 pub const SCHEDULER_JOB_PREFIX: &str = "mate:job";
 

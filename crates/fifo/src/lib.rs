@@ -1,4 +1,4 @@
-pub mod proto;
+pub mod message;
 
 use std::fmt::Display;
 use std::os::unix::ffi::OsStrExt;
@@ -13,7 +13,7 @@ use tokio::net::unix::pipe::{OpenOptions, Receiver, Sender};
 use tokio::sync::Mutex;
 use tracing::info;
 
-use crate::proto::Message;
+use self::message::Message;
 
 const RW_FS_PERMISSIONS: u16 = 0o644;
 

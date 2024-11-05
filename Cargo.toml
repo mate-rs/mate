@@ -3,6 +3,7 @@ members = [
     "crates/executor",
     "crates/fifo",
     "crates/mate",
+    "crates/proto",
     "crates/scheduler",
 ]
 default-members = [
@@ -28,3 +29,4 @@ tracing-subscriber = "0.3.18"
 
 mate-fifo = { path = "./crates/fifo" }
 mate = { path = "./crates/mate" }
+mate-proto = { path = "./crates/proto" }

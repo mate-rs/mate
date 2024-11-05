@@ -1,9 +1,9 @@
 [package]
-name = "mate-fifo"
+name = "mate-proto"
 version = "0.1.0-draft+1"
 edition = "2021"
 authors = ["Esteban Borai <estebanborai@gmail.com>"]
-description = "FIFO Implementation for Mate IPC"
+description = "Protocol definitions for Mate"
 repository = "https://github.com/mate-rs/mate"
 categories = ["web-programming"]
 keywords = ["queue", "job", "worker"]
@@ -11,12 +11,4 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 
 [dependencies]
-anyhow = { workspace = true }
-bincode = { workspace = true }
-libc = { workspace = true }
-tempfile = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
-tracing = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-
-mate-proto = { workspace = true }
