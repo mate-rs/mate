@@ -2,9 +2,10 @@ mod cli;
 
 use anyhow::Result;
 use clap::Parser;
-use cli::MateSchedulerCli;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
+
+use self::cli::MateSchedulerCli;
 
 #[tokio::main]
 async fn main() -> Result<()> {

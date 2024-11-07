@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 
-use mate_proto::Job;
+use mate_proto::{Job, JobId, PushJobDto};
 
 pub const SCHEDULER_JOB_PREFIX: &str = "mate:job";
 
@@ -21,7 +21,7 @@ impl<B: SchedulerBackend> Scheduler<B> {
     }
 
     #[inline]
-    pub async fn push(&self, job: Job) -> Result<()> {
+    pub async fn push(&self, job: PushJobDto) -> Result<JobId> {
         self.backend.push(job).await
     }
 
@@ -48,7 +48,7 @@ pub trait SchedulerBackend: Sized + Send + Sync + 'static {
     }
 
     async fn new(config: Self::Config) -> Result<Self>;
-    async fn push(&self, job: Job) -> Result<()>;
+    async fn push(&self, job: PushJobDto) -> Result<JobId>;
     async fn pop(&self) -> Result<Vec<Job>>;
     async fn list(&self) -> Result<Vec<Job>>;
 }

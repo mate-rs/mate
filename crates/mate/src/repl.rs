@@ -5,6 +5,7 @@ use anyhow::Result;
 
 use mate_fifo::message::{MainReply, Message, SchedulerRequest};
 use mate_fifo::NPipeHandle;
+use mate_proto::PushJobDto;
 
 pub struct Repl {
     main_pipe: Arc<NPipeHandle>,
@@ -29,20 +30,60 @@ impl Repl {
             let args = input.split_whitespace().collect::<Vec<&str>>();
 
             match args[0].trim() {
+                "push" => match self
+                    .scheduler_pipe
+                    .send(&Message::SchedulerRequest(SchedulerRequest::PushJob(
+                        PushJobDto {
+                            data: String::from("data"),
+                        },
+                    )))
+                    .await
+                {
+                    Ok(_) => match self.main_pipe.recv().await? {
+                        Message::MainReply(MainReply::JobCreated(job_id)) => {
+                            println!(">> Created job with ID: {}", job_id);
+                        }
+                        Message::MainReply(MainReply::Error(msg)) => {
+                            eprintln!("Failed to create job: {:?}", msg);
+                        }
+                        _ => {}
+                    },
+                    Err(err) => {
+                        eprintln!("Failed to push job: {}", err);
+                    }
+                },
+                "pop" => match self
+                    .scheduler_pipe
+                    .send(&Message::SchedulerRequest(SchedulerRequest::PopJob))
+                    .await
+                {
+                    Ok(_) => match self.main_pipe.recv().await? {
+                        Message::MainReply(MainReply::JobPopped(jobs)) => {
+                            println!(">> {:#?}", jobs);
+                        }
+                        Message::MainReply(MainReply::Error(msg)) => {
+                            eprintln!("Failed to pop job: {:?}", msg);
+                        }
+                        _ => {}
+                    },
+                    Err(err) => {
+                        eprintln!("Failed to create job: {}", err);
+                    }
+                },
                 "list" => match self
                     .scheduler_pipe
                     .send(&Message::SchedulerRequest(SchedulerRequest::ListJobs))
                     .await
                 {
-                    Ok(_) => {
-                        let msg = self.main_pipe.recv().await?;
-
-                        if let Message::MainReply(MainReply::ListJobs(jobs)) = msg {
+                    Ok(_) => match self.main_pipe.recv().await? {
+                        Message::MainReply(MainReply::ListJobs(jobs)) => {
                             println!(">> {jobs:?}");
-                        } else {
+                        }
+                        Message::MainReply(MainReply::Error(msg)) => {
                             eprintln!("Failed to list jobs: {:?}", msg);
                         }
-                    }
+                        _ => {}
+                    },
                     Err(err) => {
                         eprintln!("Failed to list jobs: {}", err);
                     }
