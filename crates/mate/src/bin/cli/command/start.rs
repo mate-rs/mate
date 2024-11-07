@@ -17,6 +17,9 @@ pub struct StartOpt {
     /// Scheduler threshold seconds
     #[clap(long, default_value = "1")]
     threshold: u64,
+    /// Do not spawn child procesess for scheduler or executor
+    #[clap(long, default_value = "false")]
+    standalone: bool,
 }
 
 impl StartOpt {
@@ -25,7 +28,11 @@ impl StartOpt {
         let main_pipe_handler = main_pipe.open().await?;
         let scheduler_pipe = NPipe::new("scheduler")?;
         let schuduler_pipe_handler = scheduler_pipe.open().await?;
-        let _scheduler_task = spawn_scheduler(main_pipe.path(), scheduler_pipe.path())?;
+
+        if !self.standalone {
+            let _scheduler_task = spawn_scheduler(main_pipe.path(), scheduler_pipe.path())?;
+        }
+
         let repl = Repl::new(main_pipe_handler, schuduler_pipe_handler);
         repl.start().await?;
         Ok(())
