@@ -7,6 +7,7 @@ pub enum Message {
     Text(String),
     MainReply(MainReply),
     SchedulerRequest(SchedulerRequest),
+    ExecutorRequest(ExecutorRequest),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -24,4 +25,9 @@ pub enum SchedulerRequest {
     PopJob,
     ListJobs,
     Exit,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ExecutorRequest {
+    ExecuteJob(Job),
 }

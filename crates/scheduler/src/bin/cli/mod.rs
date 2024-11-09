@@ -23,6 +23,8 @@ pub struct MateSchedulerCli {
     #[clap(long)]
     pub scheduler_pipe: PathBuf,
     #[clap(long)]
+    pub executor_pipe: PathBuf,
+    #[clap(long)]
     pub redis_url: String,
 }
 

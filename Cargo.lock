@@ -622,8 +622,14 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "clap",
  "mate",
+ "mate-fifo",
+ "mate-proto",
+ "redis",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
