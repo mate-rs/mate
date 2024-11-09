@@ -20,6 +20,7 @@ redis = { workspace = true, features = ["tokio-comp"] }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+wasmtime = { workspace = true }
 
 mate = { workspace = true }
 mate-fifo = { workspace = true }

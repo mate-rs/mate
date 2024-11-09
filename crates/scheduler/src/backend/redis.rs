@@ -48,7 +48,7 @@ impl SchedulerBackend for RedisBackend {
             .iter()
             .map(|data| Job {
                 id: String::from("TODO"),
-                data: data.clone(),
+                wat: data.clone(),
             })
             .collect();
 
@@ -64,7 +64,7 @@ impl SchedulerBackend for RedisBackend {
             .iter()
             .map(|data| Job {
                 id: String::from("TODO"),
-                data: data.clone(),
+                wat: data.clone(),
             })
             .collect();
 

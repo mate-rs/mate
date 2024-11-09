@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
 
+use mate_executor::task::ExecutorTask;
+
 use self::ipc::IpcServer;
 
 #[derive(Debug, Parser)]
@@ -23,9 +25,11 @@ pub struct MateExecutorCli {
 impl MateExecutorCli {
     pub async fn exec(self) -> Result<()> {
         let (ipc_server, main_tx) = IpcServer::new(&self.main_pipe, &self.executor_pipe).await?;
+        let executor_task = ExecutorTask::new(main_tx).await?;
 
         tokio::select! {
             _ = ipc_server.listen() => {},
+            _ = executor_task.run() => {},
         }
 
         Ok(())
