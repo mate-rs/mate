@@ -1,11 +1,14 @@
-use std::{path::PathBuf, process::Stdio};
+mod child;
+
+use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Args;
-use tokio::process::{Child, Command};
 
 use mate::repl::Repl;
 use mate_fifo::NPipe;
+
+use self::child::spawn;
 
 const MATE_SCHEDULER_BIN: &str = "./target/debug/mate-scheduler";
 
@@ -17,7 +20,7 @@ pub struct StartOpt {
     /// Scheduler threshold seconds
     #[clap(long, default_value = "1")]
     threshold: u64,
-    /// Do not spawn child procesess for scheduler or executor
+    /// Do not spawn child procesess for scheduler and executor
     #[clap(long, default_value = "false")]
     standalone: bool,
 }
@@ -30,26 +33,16 @@ impl StartOpt {
         let schuduler_pipe_handler = scheduler_pipe.open().await?;
 
         if !self.standalone {
-            let _scheduler_task = spawn_scheduler(main_pipe.path(), scheduler_pipe.path())?;
+            spawn(
+                &PathBuf::from(MATE_SCHEDULER_BIN),
+                main_pipe.path(),
+                scheduler_pipe.path(),
+                &self.redis_url,
+            )?;
         }
 
         let repl = Repl::new(main_pipe_handler, schuduler_pipe_handler);
         repl.start().await?;
         Ok(())
     }
-}
-
-fn spawn_scheduler(main_pipe: &PathBuf, scheduler_pipe: &PathBuf) -> Result<Child> {
-    let child = Command::new(PathBuf::from(MATE_SCHEDULER_BIN))
-        .arg("--main-pipe")
-        .arg(main_pipe.to_str().unwrap())
-        .arg("--scheduler-pipe")
-        .arg(scheduler_pipe.to_str().unwrap())
-        .arg("--redis-url")
-        .arg(String::from("redis://127.0.0.1:6379/"))
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-
-    Ok(child)
 }

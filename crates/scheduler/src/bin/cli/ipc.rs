@@ -3,14 +3,15 @@ use std::process;
 use std::sync::Arc;
 
 use anyhow::Result;
-use mate::scheduler::backend::redis::RedisBackend;
-use mate::scheduler::Scheduler;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
 use mate_fifo::message::{MainReply, Message, SchedulerRequest};
 use mate_fifo::NPipeHandle;
+
+use mate_scheduler::backend::redis::RedisBackend;
+use mate_scheduler::Scheduler;
 
 pub struct IpcServer {
     main_pipe: NPipeHandle,
