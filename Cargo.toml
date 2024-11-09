@@ -26,6 +26,7 @@ tempfile = "3.13.0"
 tokio = "1"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
+wasmtime = "26.0.1"
 
 mate-fifo = { path = "./crates/fifo" }
 mate = { path = "./crates/mate" }

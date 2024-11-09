@@ -5,7 +5,7 @@ pub type JobId = String;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Job {
     pub id: JobId,
-    pub data: String,
+    pub wat: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
