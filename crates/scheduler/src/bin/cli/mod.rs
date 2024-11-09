@@ -5,9 +5,9 @@ use std::{path::PathBuf, sync::Arc};
 use anyhow::Result;
 use clap::Parser;
 
-use mate_scheduler::{Scheduler, SchedulerBackend};
 use mate_scheduler::backend::redis::RedisBackend;
 use mate_scheduler::task::SchedulerTask;
+use mate_scheduler::{Scheduler, SchedulerBackend};
 
 use self::ipc::IpcServer;
 

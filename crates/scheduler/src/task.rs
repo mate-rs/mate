@@ -3,8 +3,8 @@ use std::{sync::Arc, time::Duration};
 use anyhow::Result;
 use tokio::{sync::mpsc::Sender, time::sleep};
 
-use crate::Scheduler;
 use crate::backend::redis::RedisBackend;
+use crate::Scheduler;
 
 pub struct SchedulerTask {
     scheduler: Arc<Scheduler<RedisBackend>>,
