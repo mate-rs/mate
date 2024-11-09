@@ -1,11 +1,13 @@
 use std::path::PathBuf;
+use std::process;
 
 use anyhow::Result;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
 
-use mate_fifo::message::{ExecutorRequest, Message};
+use mate_fifo::message::{ExecutorRequest, MainReply, Message};
 use mate_fifo::NPipeHandle;
+use tracing::info;
 
 pub struct IpcServer {
     main_pipe: NPipeHandle,
@@ -48,6 +50,13 @@ impl IpcServer {
                 match req {
                     ExecutorRequest::ExecuteJob(job) => {
                         println!("Received job: {job:#?}");
+                    }
+                    ExecutorRequest::Exit => {
+                        info!("Exiting...");
+                        self.main_pipe
+                            .send(&Message::MainReply(MainReply::ExecutorExited))
+                            .await?;
+                        process::exit(0);
                     }
                 }
             }

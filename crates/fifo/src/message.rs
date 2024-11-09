@@ -17,6 +17,7 @@ pub enum MainReply {
     ListJobs(Vec<Job>),
     Error(String),
     SchedulerExited,
+    ExecutorExited,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,4 +31,5 @@ pub enum SchedulerRequest {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ExecutorRequest {
     ExecuteJob(Job),
+    Exit,
 }

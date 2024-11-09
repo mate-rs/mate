@@ -33,6 +33,7 @@ impl StartOpt {
         let scheduler_pipe = NPipe::new("scheduler")?;
         let schuduler_pipe_handler = scheduler_pipe.open().await?;
         let executor_pipe = NPipe::new("executor")?;
+        let executor_pipe_handler = executor_pipe.open().await?;
 
         if !self.standalone {
             let main_pipe = main_pipe.path().to_str().unwrap().to_string();
@@ -56,7 +57,11 @@ impl StartOpt {
             spawn(&PathBuf::from(MATE_EXECUTOR_BIN), executor_args)?;
         }
 
-        let repl = Repl::new(main_pipe_handler, schuduler_pipe_handler);
+        let repl = Repl::new(
+            main_pipe_handler,
+            schuduler_pipe_handler,
+            executor_pipe_handler,
+        );
         repl.start().await?;
         Ok(())
     }
