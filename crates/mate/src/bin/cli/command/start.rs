@@ -6,6 +6,7 @@ use tokio::process::{Child, Command};
 
 use mate::repl::Repl;
 use mate_fifo::NPipe;
+use tracing::info;
 
 const MATE_SCHEDULER_BIN: &str = "./target/debug/mate-scheduler";
 
@@ -30,6 +31,7 @@ impl StartOpt {
         let schuduler_pipe_handler = scheduler_pipe.open().await?;
 
         if !self.standalone {
+            info!("Spawning scheduler...");
             let _scheduler_task = spawn_scheduler(main_pipe.path(), scheduler_pipe.path())?;
         }
 

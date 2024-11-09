@@ -1,8 +1,6 @@
 pub mod client;
-pub mod executor;
 pub mod job;
 pub mod repl;
-pub mod scheduler;
 
 use anyhow::Result;
 

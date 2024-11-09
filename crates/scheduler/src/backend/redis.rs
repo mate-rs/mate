@@ -4,7 +4,7 @@ use redis::Cmd;
 
 use mate_proto::{Job, JobId, PushJobDto};
 
-use crate::scheduler::{SchedulerBackend, SCHEDULER_JOB_PREFIX};
+use crate::{SchedulerBackend, SCHEDULER_JOB_PREFIX};
 
 pub const JOB_COUNTER_KEY: &str = "mate:job:counter";
 
