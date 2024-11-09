@@ -3,20 +3,26 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use mate_fifo::message::{MainReply, Message, SchedulerRequest};
+use mate_fifo::message::{ExecutorRequest, MainReply, Message, SchedulerRequest};
 use mate_fifo::NPipeHandle;
 use mate_proto::PushJobDto;
 
 pub struct Repl {
     main_pipe: Arc<NPipeHandle>,
     scheduler_pipe: Arc<NPipeHandle>,
+    executor_pipe: Arc<NPipeHandle>,
 }
 
 impl Repl {
-    pub fn new(main_pipe: NPipeHandle, scheduler_pipe: NPipeHandle) -> Self {
+    pub fn new(
+        main_pipe: NPipeHandle,
+        scheduler_pipe: NPipeHandle,
+        executor_pipe: NPipeHandle,
+    ) -> Self {
         Self {
             main_pipe: Arc::new(main_pipe),
             scheduler_pipe: Arc::new(scheduler_pipe),
+            executor_pipe: Arc::new(executor_pipe),
         }
     }
 
@@ -98,7 +104,7 @@ impl Repl {
                             let msg = self.main_pipe.recv().await?;
 
                             if let Message::MainReply(MainReply::SchedulerExited) = msg {
-                                process::exit(0);
+                                println!("Scheduler exited");
                             } else {
                                 eprintln!("Failed to exit scheduler: {:?}", msg);
                             }
@@ -107,6 +113,27 @@ impl Repl {
                             eprintln!("Failed to list jobs: {}", err);
                         }
                     }
+
+                    match self
+                        .executor_pipe
+                        .send(&Message::ExecutorRequest(ExecutorRequest::Exit))
+                        .await
+                    {
+                        Ok(_) => {
+                            let msg = self.main_pipe.recv().await?;
+
+                            if let Message::MainReply(MainReply::ExecutorExited) = msg {
+                                println!("Executor exited")
+                            } else {
+                                eprintln!("Failed to exit executor: {:?}", msg);
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("Failed to list jobs: {}", err);
+                        }
+                    }
+
+                    process::exit(0);
                 }
                 _ => println!(
                     "Unknown command: \"{}\", use \"help\" to learn more about commands",

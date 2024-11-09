@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
 
@@ -5,22 +6,15 @@ use anyhow::Result;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
-pub fn spawn(
-    binary_path: &PathBuf,
-    main_pipe: &PathBuf,
-    scheduler_pipe: &PathBuf,
-    redis_url: &str,
-) -> Result<()> {
-    let mut child = Command::new(binary_path)
-        .arg("--main-pipe")
-        .arg(main_pipe.to_str().unwrap())
-        .arg("--scheduler-pipe")
-        .arg(scheduler_pipe.to_str().unwrap())
-        .arg("--redis-url")
-        .arg(redis_url)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
+pub fn spawn(binary_path: &PathBuf, args: HashMap<String, String>) -> Result<()> {
+    let mut cmd = Command::new(binary_path);
+
+    for (flag, value) in args.iter() {
+        cmd.arg(flag);
+        cmd.arg(value);
+    }
+
+    let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
 
     let stdout = child.stdout.take().expect("Expected a Stdout Handle");
     let stderr = child.stderr.take().expect("Expected a Stderr Handle");
