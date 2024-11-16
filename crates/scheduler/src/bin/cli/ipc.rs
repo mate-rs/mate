@@ -3,6 +3,7 @@ use std::process;
 use std::sync::Arc;
 
 use anyhow::Result;
+use mate_proto::Job;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
 use tracing::{error, info};
@@ -15,23 +16,27 @@ use mate_scheduler::Scheduler;
 
 pub struct IpcServer {
     main_pipe: NPipeHandle,
+    executor_pipe: NPipeHandle,
     scheduler_pipe: NPipeHandle,
-    rx: Mutex<Receiver<String>>,
+    rx: Mutex<Receiver<Vec<Job>>>,
 }
 
 impl IpcServer {
     pub async fn new(
         main_pipe: &PathBuf,
         scheduler_pipe: &PathBuf,
-    ) -> Result<(Self, Sender<String>)> {
+        executor_pipe: &PathBuf,
+    ) -> Result<(Self, Sender<Vec<Job>>)> {
         let main_pipe = NPipeHandle::new(main_pipe).await?;
+        let executor_pipe = NPipeHandle::new(executor_pipe).await?;
         let scheduler_pipe = NPipeHandle::new(scheduler_pipe).await?;
-        let (tx, rx) = channel::<String>(1024);
+        let (tx, rx) = channel::<Vec<Job>>(1024);
         let rx = Mutex::new(rx);
 
         Ok((
             Self {
                 main_pipe,
+                executor_pipe,
                 scheduler_pipe,
                 rx,
             },
@@ -111,12 +116,23 @@ impl IpcServer {
     async fn handle_main(&self) -> Result<()> {
         let mut rx = self.rx.lock().await;
 
-        loop {
-            if let Some(msg) = rx.recv().await {
-                println!("Got main process message: {msg}")
-            } else {
-                println!("No message from main process");
+        while let Some(jobs) = rx.recv().await {
+            match self
+                .executor_pipe
+                .send(&Message::ExecutorRequest(
+                    mate_fifo::message::ExecutorRequest::ExecuteJobs(jobs),
+                ))
+                .await
+            {
+                Ok(_) => {
+                    info!("Sent jobs to executor");
+                }
+                Err(err) => {
+                    error!(%err, "Failed to send jobs to executor");
+                }
             }
         }
+
+        Ok(())
     }
 }

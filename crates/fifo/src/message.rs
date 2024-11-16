@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use mate_proto::{Job, PushJobDto};
+use mate_proto::{Job, PushJobDto, Task};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Message {
@@ -15,6 +15,8 @@ pub enum MainReply {
     JobCreated(String),
     JobPopped(Vec<Job>),
     ListJobs(Vec<Job>),
+    TaskCreated(String),
+    TasksList(Vec<Task>),
     Error(String),
     SchedulerExited,
     ExecutorExited,
@@ -30,6 +32,8 @@ pub enum SchedulerRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ExecutorRequest {
-    ExecuteJob(Job),
+    ListTasks,
+    CreateTask(Task),
+    ExecuteJobs(Vec<Job>),
     Exit,
 }
