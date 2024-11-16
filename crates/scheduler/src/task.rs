@@ -3,17 +3,20 @@ use std::{sync::Arc, time::Duration};
 use anyhow::Result;
 use tokio::{sync::mpsc::Sender, time::sleep};
 
+use mate_proto::Job;
+use tracing::error;
+
 use crate::backend::redis::RedisBackend;
 use crate::Scheduler;
 
 pub struct SchedulerTask {
     scheduler: Arc<Scheduler<RedisBackend>>,
-    main_process_tx: Sender<String>,
+    main_process_tx: Sender<Vec<Job>>,
 }
 
 impl SchedulerTask {
     pub async fn new(
-        main_process_tx: Sender<String>,
+        main_process_tx: Sender<Vec<Job>>,
         scheduler: Arc<Scheduler<RedisBackend>>,
     ) -> Result<Self> {
         Ok(Self {
@@ -26,28 +29,20 @@ impl SchedulerTask {
         loop {
             sleep(Duration::from_secs(1)).await;
 
-            // match scheduler.pop().await {
-            //     Ok(jobs) => {
-            //         if jobs.is_empty() {
-            //             continue;
-            //         }
+            match self.scheduler.pop().await {
+                Ok(jobs) => {
+                    if jobs.is_empty() {
+                        continue;
+                    }
 
-            //         if let Err(err) = main_pipe
-            //             .send(&Message::Text(format!("Jobs found: {}", jobs.len())))
-            //             .await
-            //         {
-            //             error!(%err, "Failed to send message to fifo");
-            //         }
-            //     }
-            //     Err(err) => {
-            //         if let Err(err) = main_pipe
-            //             .send(&Message::Text(format!("Failed to fetch jobs: {}", err)))
-            //             .await
-            //         {
-            //             error!(%err, "Failed to send message to fifo");
-            //         }
-            //     }
-            // }
+                    if let Err(err) = self.main_process_tx.send(jobs).await {
+                        error!(%err, "Failed to send jobs to main process");
+                    }
+                }
+                Err(err) => {
+                    error!(%err, "Failed to pop jobs from scheduler");
+                }
+            }
         }
     }
 }

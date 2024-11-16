@@ -1,10 +1,11 @@
+pub mod storage;
 pub mod task;
 
 use anyhow::Result;
 use tracing::info;
 use wasmtime::{Caller, Engine, Linker, Module, Store};
 
-use mate_proto::Job;
+use mate_proto::{Job, Task};
 
 pub struct Executor {}
 
@@ -19,9 +20,9 @@ impl Executor {
         Self {}
     }
 
-    pub async fn execute(&self, job: Job) -> Result<()> {
+    pub async fn execute(&self, job: &Job, task: Task) -> Result<()> {
         let engine = Engine::default();
-        let module = Module::new(&engine, job.wat)?;
+        let module = Module::new(&engine, task.wasm)?;
         let mut linker = Linker::new(&engine);
 
         linker.func_wrap(

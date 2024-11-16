@@ -30,7 +30,8 @@ pub struct MateSchedulerCli {
 
 impl MateSchedulerCli {
     pub async fn exec(self) -> Result<()> {
-        let (ipc_server, main_tx) = IpcServer::new(&self.main_pipe, &self.scheduler_pipe).await?;
+        let (ipc_server, main_tx) =
+            IpcServer::new(&self.main_pipe, &self.scheduler_pipe, &self.executor_pipe).await?;
         let backend = RedisBackend::new(self.redis_url.to_owned()).await?;
         let scheduler = Arc::new(Scheduler::new(backend));
         let scheduler_task = SchedulerTask::new(main_tx, Arc::clone(&scheduler)).await?;

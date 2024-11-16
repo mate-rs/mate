@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::io::Read;
 use std::process;
 use std::sync::Arc;
 
@@ -5,7 +7,7 @@ use anyhow::Result;
 
 use mate_fifo::message::{ExecutorRequest, MainReply, Message, SchedulerRequest};
 use mate_fifo::NPipeHandle;
-use mate_proto::PushJobDto;
+use mate_proto::{PushJobDto, Task};
 
 pub struct Repl {
     main_pipe: Arc<NPipeHandle>,
@@ -27,7 +29,7 @@ impl Repl {
     }
 
     pub async fn start(&self) -> Result<()> {
-        println!("mate‎ v0.0.0. Run 'help' to see available commands, 'exit' to quit");
+        println!("mate v0.0.0. Run 'help' to see available commands, 'exit' to quit");
 
         loop {
             eprint!("𐲖 ");
@@ -36,28 +38,75 @@ impl Repl {
             let args = input.split_whitespace().collect::<Vec<&str>>();
 
             match args[0].trim() {
-                "push" => match self
-                    .scheduler_pipe
-                    .send(&Message::SchedulerRequest(SchedulerRequest::PushJob(
-                        PushJobDto {
-                            data: String::from("data"),
+                "create" => {
+                    let name = args[1].trim().to_string();
+                    let wasm_path = args[2..].join(" ");
+                    let wasm_file = File::open(wasm_path)?;
+                    let wasm = wasm_file.bytes().collect::<Result<Vec<u8>, _>>()?;
+
+                    match self
+                        .executor_pipe
+                        .send(&Message::ExecutorRequest(ExecutorRequest::CreateTask(
+                            Task { name, wasm },
+                        )))
+                        .await
+                    {
+                        Ok(_) => match self.main_pipe.recv().await? {
+                            Message::MainReply(MainReply::TaskCreated(task_id)) => {
+                                println!(">> Created task with ID: {}", task_id);
+                            }
+                            Message::MainReply(MainReply::Error(msg)) => {
+                                eprintln!("Failed to create task: {:?}", msg);
+                            }
+                            _ => {}
                         },
-                    )))
+                        Err(err) => {
+                            eprintln!("Failed to create task: {}", err);
+                        }
+                    }
+                }
+                "tasks" => match self
+                    .scheduler_pipe
+                    .send(&Message::ExecutorRequest(ExecutorRequest::ListTasks))
                     .await
                 {
                     Ok(_) => match self.main_pipe.recv().await? {
-                        Message::MainReply(MainReply::JobCreated(job_id)) => {
-                            println!(">> Created job with ID: {}", job_id);
+                        Message::MainReply(MainReply::TasksList(tasks)) => {
+                            println!(">> {tasks:?}");
                         }
                         Message::MainReply(MainReply::Error(msg)) => {
-                            eprintln!("Failed to create job: {:?}", msg);
+                            eprintln!("Failed to list tasks: {:?}", msg);
                         }
                         _ => {}
                     },
                     Err(err) => {
-                        eprintln!("Failed to push job: {}", err);
+                        eprintln!("Failed to list tasks: {}", err);
                     }
                 },
+                "push" => {
+                    let name = args[1].trim().to_string();
+
+                    match self
+                        .scheduler_pipe
+                        .send(&Message::SchedulerRequest(SchedulerRequest::PushJob(
+                            PushJobDto { task: name.clone() },
+                        )))
+                        .await
+                    {
+                        Ok(_) => match self.main_pipe.recv().await? {
+                            Message::MainReply(MainReply::JobCreated(job_id)) => {
+                                println!(">> Created job with ID: {} using task: {}", job_id, name);
+                            }
+                            Message::MainReply(MainReply::Error(msg)) => {
+                                eprintln!("Failed to create job: {:?}", msg);
+                            }
+                            _ => {}
+                        },
+                        Err(err) => {
+                            eprintln!("Failed to push job: {}", err);
+                        }
+                    }
+                }
                 "pop" => match self
                     .scheduler_pipe
                     .send(&Message::SchedulerRequest(SchedulerRequest::PopJob))

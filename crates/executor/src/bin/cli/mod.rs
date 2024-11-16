@@ -1,11 +1,12 @@
 mod ipc;
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::Result;
 use clap::Parser;
 
-use mate_executor::task::ExecutorTask;
+use mate_executor::{storage::Storage, task::ExecutorTask};
 
 use self::ipc::IpcServer;
 
@@ -24,8 +25,10 @@ pub struct MateExecutorCli {
 
 impl MateExecutorCli {
     pub async fn exec(self) -> Result<()> {
-        let (ipc_server, main_tx) = IpcServer::new(&self.main_pipe, &self.executor_pipe).await?;
-        let executor_task = ExecutorTask::new(main_tx).await?;
+        let storage = Storage::new().await?;
+        let (ipc_server, main_rx) =
+            IpcServer::new(Arc::clone(&storage), &self.main_pipe, &self.executor_pipe).await?;
+        let mut executor_task = ExecutorTask::new(Arc::clone(&storage), main_rx).await?;
 
         tokio::select! {
             _ = ipc_server.listen() => {},

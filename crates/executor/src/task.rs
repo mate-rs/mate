@@ -1,51 +1,46 @@
-use std::time::Duration;
-
 use anyhow::Result;
+use tokio::sync::mpsc::Receiver;
+use tracing::{error, info};
+
 use mate_proto::Job;
-use tokio::{sync::mpsc::Sender, time::sleep};
 
-use crate::Executor;
-
-const DEMO_WAT: &str = r#"
-        (module
-            (import "host" "host_func" (func $host_hello (param i32)))
-
-            (func (export "hello")
-                i32.const 3
-                call $host_hello)
-        )
-    "#;
+use crate::{storage::SharedStorage, Executor};
 
 pub struct ExecutorTask {
-    main_process_tx: Sender<String>,
+    storage: SharedStorage,
+    main_process_rx: Receiver<Vec<Job>>,
 }
 
 impl ExecutorTask {
-    pub async fn new(main_process_tx: Sender<String>) -> Result<Self> {
-        Ok(Self { main_process_tx })
+    pub async fn new(storage: SharedStorage, main_process_rx: Receiver<Vec<Job>>) -> Result<Self> {
+        Ok(Self {
+            storage,
+            main_process_rx,
+        })
     }
 
-    pub async fn run(&self) {
-        loop {
-            sleep(Duration::from_secs(1)).await;
-            let executor = Executor::new();
-            match executor
-                .execute(Job {
-                    id: "1234".to_string(),
-                    wat: DEMO_WAT.to_string(),
-                })
-                .await
-            {
-                Ok(_) => {
-                    self.main_process_tx.send("done".to_string()).await.unwrap();
-                }
-                Err(e) => {
-                    self.main_process_tx
-                        .send(format!("error: {}", e))
-                        .await
-                        .unwrap();
+    pub async fn run(&mut self) {
+        while let Some(jobs) = self.main_process_rx.recv().await {
+            info!(?jobs, "Received jobs from main process");
+            for job in jobs {
+                match self.execute(&job).await {
+                    Ok(_) => {
+                        info!("Executed job {} with success", job.id);
+                    }
+                    Err(err) => {
+                        error!("Failed to execute job {}. {err}", job.id);
+                    }
                 }
             }
         }
+    }
+
+    async fn execute(&self, job: &Job) -> Result<()> {
+        let task = self.storage.get_task(&job.id).await?;
+        let executor = Executor::new();
+
+        executor.execute(job, task).await?;
+
+        Ok(())
     }
 }
