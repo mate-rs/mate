@@ -66,7 +66,7 @@ impl Repl {
                     }
                 }
                 "tasks" => match self
-                    .scheduler_pipe
+                    .executor_pipe
                     .send(&Message::ExecutorRequest(ExecutorRequest::ListTasks))
                     .await
                 {
