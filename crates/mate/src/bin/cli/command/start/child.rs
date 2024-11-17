@@ -16,8 +16,8 @@ pub fn spawn(binary_path: &PathBuf, args: HashMap<String, String>) -> Result<()>
         .to_str()
         .context("Failed to retrieve utf-8 string for file name")?;
 
-    let mut logs = File::create_new(format!("{}_log.log", process_name))?;
-    let mut errs = File::create_new(format!("{}_err.log", process_name))?;
+    let mut logs = File::create(format!("{}_log.log", process_name))?;
+    let mut errs = File::create(format!("{}_err.log", process_name))?;
 
     for (flag, value) in args.iter() {
         cmd.arg(flag);
